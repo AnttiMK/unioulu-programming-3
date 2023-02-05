@@ -4,11 +4,14 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Server implements HttpHandler {
 
@@ -50,7 +53,7 @@ public class Server implements HttpHandler {
     }
 
     private void handlePost(HttpExchange exchange) throws IOException {
-        String requestBody = new String(exchange.getRequestBody().readAllBytes());
+        String requestBody = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
         postedData.add(requestBody);
         exchange.sendResponseHeaders(200, -1);
         exchange.getResponseBody().close();
