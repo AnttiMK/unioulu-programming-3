@@ -47,8 +47,9 @@ public class RegistrationHandler implements HttpHandler {
     }
 
     private void sendResponse(HttpExchange exchange, int code, String response) throws IOException {
-        exchange.sendResponseHeaders(code, response.length());
-        exchange.getResponseBody().write(response.getBytes());
+        byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
+        exchange.sendResponseHeaders(code, responseBytes.length);
+        exchange.getResponseBody().write(responseBytes);
         exchange.getResponseBody().close();
     }
 
