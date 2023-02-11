@@ -23,9 +23,9 @@ public class WarningHandler implements HttpHandler {
         } else if (requestMethod.equals("POST")) {
             handlePost(exchange);
         } else {
-            String response = "Not supported";
-            exchange.sendResponseHeaders(400, response.length());
-            exchange.getResponseBody().write(response.getBytes());
+            byte[] response = "Not supported".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(400, response.length);
+            exchange.getResponseBody().write(response);
             exchange.getResponseBody().close();
         }
     }
