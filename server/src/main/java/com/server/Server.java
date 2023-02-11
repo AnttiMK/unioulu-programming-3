@@ -1,6 +1,7 @@
 package com.server;
 
-import com.server.realm.Warning;
+import com.server.realm.RegistrationHandler;
+import com.server.realm.WarningHandler;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
@@ -33,10 +34,10 @@ public class Server {
             }
         });
 
-        //create context that defines path for the resource, in this case a "help"
-        server.createContext("/warning", new Warning()).setAuthenticator(new UserAuthenticator());
-        // creates a default executor
-        server.setExecutor(null);
+        UserAuthenticator auth = new UserAuthenticator();
+        server.createContext("/warning", new WarningHandler()).setAuthenticator(auth);
+        server.createContext("/registration", new RegistrationHandler(auth));
+
         server.start();
         System.out.println("Started web server on " + server.getAddress());
     }

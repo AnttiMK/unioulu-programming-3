@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Warning implements HttpHandler {
+public class WarningHandler implements HttpHandler {
 
     private final List<String> postedData = new ArrayList<>();
 
