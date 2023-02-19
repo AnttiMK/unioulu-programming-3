@@ -2,24 +2,24 @@ package com.server;
 
 public class WarningMessage {
 
-    private String nick;
+    private String nickname;
     private String latitude;
     private String longitude;
     private String dangertype;
 
-    public WarningMessage(String nick, String latitude, String longitude, String dangertype) {
-        this.nick = nick;
+    public WarningMessage(String nickname, String latitude, String longitude, String dangertype) {
+        this.nickname = nickname;
         this.latitude = latitude;
         this.longitude = longitude;
         this.dangertype = dangertype;
     }
 
-    public String getNick() {
-        return nick;
+    public String getNickname() {
+        return nickname;
     }
 
-    public void setNick(String nick) {
-        this.nick = nick;
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     public String getLatitude() {

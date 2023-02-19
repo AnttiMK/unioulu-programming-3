@@ -34,7 +34,6 @@ public class WarningHandler implements HttpHandler {
     }
 
     private void handleGet(HttpExchange exchange) throws IOException {
-        System.out.println("Get request");
         if (messageStore.isEmpty()) {
             exchange.sendResponseHeaders(204, -1);
             return;
@@ -56,8 +55,6 @@ public class WarningHandler implements HttpHandler {
 
     private void handlePost(HttpExchange exchange) throws IOException {
         String requestBody = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
-        System.out.println("Received warning POST:");
-        System.out.println(requestBody);
         try {
             JSONObject json = new JSONObject(requestBody);
             messageStore.add(new WarningMessage(

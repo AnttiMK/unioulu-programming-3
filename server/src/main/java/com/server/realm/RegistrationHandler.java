@@ -30,9 +30,6 @@ public class RegistrationHandler implements HttpHandler {
                 .lines()
                 .collect(Collectors.joining("\n"));
 
-        System.out.println("Receiver registration POST:");
-        System.out.println(jsonString);
-
         JSONObject json;
         try {
             json = new JSONObject(jsonString);
