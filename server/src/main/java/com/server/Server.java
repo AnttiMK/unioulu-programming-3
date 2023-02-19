@@ -57,7 +57,7 @@ public class Server {
             passphrase = args[1].toCharArray();
         } else {
             keyStoreFile = "keystore.jks";
-            passphrase = "password2".toCharArray();
+            passphrase = "password".toCharArray();
         }
 
         KeyStore ks = KeyStore.getInstance("JKS");

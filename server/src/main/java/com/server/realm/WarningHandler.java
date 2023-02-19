@@ -56,15 +56,13 @@ public class WarningHandler implements HttpHandler {
     private void handlePost(HttpExchange exchange) throws IOException {
         String requestBody = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
         try {
-            new JSONArray(requestBody).forEach(o -> {
-                JSONObject json = (JSONObject) o;
-                messageStore.add(new WarningMessage(
-                        json.getString("nickname"),
-                        json.getString("latitude"),
-                        json.getString("longitude"),
-                        json.getString("dangertype")
-                ));
-            });
+            JSONObject json = new JSONObject(requestBody);
+            messageStore.add(new WarningMessage(
+                    json.getString("nickname"),
+                    json.getString("latitude"),
+                    json.getString("longitude"),
+                    json.getString("dangertype")
+            ));
             exchange.sendResponseHeaders(200, -1);
             exchange.getResponseBody().close();
         } catch (Exception e) {
