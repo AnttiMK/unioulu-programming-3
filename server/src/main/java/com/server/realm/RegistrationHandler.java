@@ -30,6 +30,9 @@ public class RegistrationHandler implements HttpHandler {
                 .lines()
                 .collect(Collectors.joining("\n"));
 
+        System.out.println("Receiver registration POST:");
+        System.out.println(jsonString);
+
         JSONObject json;
         try {
             json = new JSONObject(jsonString);
@@ -45,6 +48,11 @@ public class RegistrationHandler implements HttpHandler {
             username = json.getString("username");
             password = json.getString("password");
             email = json.getString("email");
+
+            if (username.isEmpty() || password.isEmpty() || email.isEmpty()) {
+                sendBadRequest(exchange, "All fields were not populated");
+                return;
+            }
         } catch (Exception e) {
             sendBadRequest(exchange, "Missing fields");
             return;
