@@ -58,7 +58,12 @@ public class WarningHandler implements HttpHandler {
         try {
             new JSONArray(requestBody).forEach(o -> {
                 JSONObject json = (JSONObject) o;
-                messageStore.add(new WarningMessage(json.getString("nickname"), json.getString("latitude"), json.getString("longitude"), json.getString("dangertype")));
+                messageStore.add(new WarningMessage(
+                        json.getString("nickname"),
+                        json.getString("latitude"),
+                        json.getString("longitude"),
+                        json.getString("dangertype")
+                ));
             });
             exchange.sendResponseHeaders(200, -1);
             exchange.getResponseBody().close();

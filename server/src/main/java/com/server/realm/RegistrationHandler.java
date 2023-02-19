@@ -3,6 +3,7 @@ package com.server.realm;
 import com.server.UserAuthenticator;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,17 +26,31 @@ public class RegistrationHandler implements HttpHandler {
             return;
         }
 
-        String[] credentials = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+        String jsonString = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
                 .lines()
-                .collect(Collectors.joining("\n"))
-                .split(":");
+                .collect(Collectors.joining("\n"));
 
-        if (credentials.length != 2) {
-            sendBadRequest(exchange, "Bad request");
+        JSONObject json;
+        try {
+            json = new JSONObject(jsonString);
+        } catch (Exception e) {
+            sendBadRequest(exchange, "Invalid JSON: " + e.getMessage());
             return;
         }
 
-        if (auth.register(credentials[0], credentials[1])) {
+        String username;
+        String password;
+        String email;
+        try {
+            username = json.getString("username");
+            password = json.getString("password");
+            email = json.getString("email");
+        } catch (Exception e) {
+            sendBadRequest(exchange, "Missing fields");
+            return;
+        }
+
+        if (auth.register(username, password, email)) {
             sendResponse(exchange, 200, "Registered");
         } else {
             sendBadRequest(exchange, "User already exists");
