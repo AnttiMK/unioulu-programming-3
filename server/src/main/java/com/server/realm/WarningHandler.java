@@ -61,6 +61,7 @@ public class WarningHandler implements HttpHandler {
                     json.getString("nickname"),
                     json.getDouble("latitude"),
                     json.getDouble("longitude"),
+                    json.getLong("sent"),
                     json.getString("dangertype")
             ));
             exchange.sendResponseHeaders(200, -1);
