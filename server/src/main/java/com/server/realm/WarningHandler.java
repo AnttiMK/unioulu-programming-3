@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 public class WarningHandler implements HttpHandler {
 
-    private static final String DATE_PATTERN = "yyyy-MMdd'T'HH:mm:ss.SSSX";
+    private static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
     private final MessageDatabase database;
 
     public WarningHandler(MessageDatabase database) {
