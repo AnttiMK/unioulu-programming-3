@@ -17,7 +17,7 @@ public class DBQueries {
             + ")";
 
     public static final String INSERT_DUMMY_USER = "INSERT INTO users (username, password, email) "
-            + "VALUES ('dummy', 'password', 'dummy@example.com'";
+            + "VALUES ('dummy', 'password', 'dummy@example.com')";
 
     public static final String CHECK_CREDENTIALS = "SELECT * FROM users WHERE username = ? AND password = ?";
 
