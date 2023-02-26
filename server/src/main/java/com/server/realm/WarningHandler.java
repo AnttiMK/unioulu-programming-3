@@ -47,16 +47,19 @@ public class WarningHandler implements HttpHandler {
         try {
             ResultSet rs = database.getMessages();
             JSONArray array = new JSONArray();
+            int count = 0;
             while (rs.next()) {
+                count++;
                 JSONObject json = new JSONObject();
                 json.put("nickname", rs.getString("nickname"));
                 json.put("latitude", rs.getDouble("latitude"));
                 json.put("longitude", rs.getDouble("longitude"));
                 String sentDate = Instant.ofEpochMilli(rs.getLong("sent")).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
                 json.put("sent", sentDate);
+                json.put("dangertype", rs.getString("dangertype"));
                 array.put(json);
             }
-
+            System.out.println("Sent " + count + " messages");
             System.out.println(array);
             byte[] responseBytes = array.toString().getBytes(StandardCharsets.UTF_8);
             exchange.setAttribute("content-type", "application/json");
