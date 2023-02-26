@@ -43,7 +43,7 @@ public class WarningHandler implements HttpHandler {
     private void handleGet(HttpExchange exchange) throws IOException {
         try {
             JSONArray array = database.getMessages();
-            if (array == null) {
+            if (array.isEmpty()) {
                 exchange.sendResponseHeaders(204, -1);
                 exchange.getResponseBody().close();
                 return;

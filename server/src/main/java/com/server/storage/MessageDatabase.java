@@ -103,9 +103,7 @@ public class MessageDatabase {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.GET_ALL_MESSAGES)) {
             ResultSet rs = ps.executeQuery();
             JSONArray array = new JSONArray();
-            int count = 0;
             while (rs.next()) {
-                count++;
                 JSONObject json = new JSONObject();
                 json.put("nickname", rs.getString("nickname"));
                 json.put("latitude", rs.getDouble("latitude"));
@@ -115,11 +113,7 @@ public class MessageDatabase {
                 json.put("dangertype", rs.getString("dangertype"));
                 array.put(json);
             }
-            if (count == 0) {
-                return null;
-            } else {
-                return array;
-            }
+            return array;
         }
     }
 
