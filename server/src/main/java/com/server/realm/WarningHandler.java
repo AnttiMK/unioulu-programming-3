@@ -1,6 +1,6 @@
 package com.server.realm;
 
-import com.server.WarningMessage;
+import com.server.storage.MessageDatabase;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.json.JSONArray;
@@ -10,13 +10,23 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 
 public class WarningHandler implements HttpHandler {
 
-    private final List<WarningMessage> messageStore = new ArrayList<>();
+    private static final String DATE_PATTERN = "yyyy-MMdd'T'HH:mm:ss.SSSX";
+    private final MessageDatabase database;
+
+    public WarningHandler(MessageDatabase database) {
+        this.database = database;
+    }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -34,16 +44,29 @@ public class WarningHandler implements HttpHandler {
     }
 
     private void handleGet(HttpExchange exchange) throws IOException {
-        if (messageStore.isEmpty()) {
-            exchange.sendResponseHeaders(204, -1);
-            return;
-        }
-
         try {
-            byte[] responseBytes = new JSONArray(messageStore).toString().getBytes(StandardCharsets.UTF_8);
+            ResultSet rs = database.getMessages();
+            JSONArray array = new JSONArray();
+            while (rs.next()) {
+                JSONObject json = new JSONObject();
+                json.put("nickname", rs.getString("nickname"));
+                json.put("latitude", rs.getDouble("latitude"));
+                json.put("longitude", rs.getDouble("longitude"));
+                String sentDate = Instant.ofEpochMilli(rs.getLong("sent")).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+                json.put("sent", sentDate);
+                array.put(json);
+            }
+
+            byte[] responseBytes = array.toString().getBytes(StandardCharsets.UTF_8);
             exchange.setAttribute("content-type", "application/json");
             exchange.sendResponseHeaders(200, responseBytes.length);
             exchange.getResponseBody().write(responseBytes);
+            exchange.getResponseBody().close();
+        } catch (SQLException e) {
+            String message = "Error while fetching messages: " + e.getMessage();
+            byte[] response = message.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(500, response.length);
+            exchange.getResponseBody().write(response);
             exchange.getResponseBody().close();
         } catch (Exception e) {
             byte[] response = "Error while parsing JSON".getBytes(StandardCharsets.UTF_8);
@@ -57,14 +80,25 @@ public class WarningHandler implements HttpHandler {
         String requestBody = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
         try {
             JSONObject json = new JSONObject(requestBody);
-            messageStore.add(new WarningMessage(
-                    json.getString("nickname"),
-                    json.getDouble("latitude"),
-                    json.getDouble("longitude"),
-                    json.getLong("sent"),
-                    json.getString("dangertype")
-            ));
+            String nickname = json.getString("nickname");
+            double latitude = json.getDouble("latitude");
+            double longitude = json.getDouble("longitude");
+            long sent = ZonedDateTime.parse(json.getString("sent"), DateTimeFormatter.ofPattern(DATE_PATTERN)).toInstant().toEpochMilli();
+            String dangertype = json.getString("dangertype");
+
+            database.handleMessage(nickname, latitude, longitude, sent, dangertype);
             exchange.sendResponseHeaders(200, -1);
+            exchange.getResponseBody().close();
+        } catch (DateTimeException e) {
+            byte[] response = "Invalid date format".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(400, response.length);
+            exchange.getResponseBody().write(response);
+            exchange.getResponseBody().close();
+        } catch (SQLException e) {
+            String message = "Database error: " + e.getMessage();
+            byte[] response = message.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(500, response.length);
+            exchange.getResponseBody().write(response);
             exchange.getResponseBody().close();
         } catch (Exception e) {
             byte[] response = "Invalid JSON".getBytes(StandardCharsets.UTF_8);

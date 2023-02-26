@@ -2,6 +2,7 @@ package com.server;
 
 import com.server.realm.RegistrationHandler;
 import com.server.realm.WarningHandler;
+import com.server.storage.MessageDatabase;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
@@ -22,6 +23,7 @@ public class Server {
 
     public static void main(String[] args) {
         try {
+            MessageDatabase database = new MessageDatabase();
             //create the http server to port 8001 with default logger
             HttpsServer server = HttpsServer.create(new InetSocketAddress(8001), 0);
             SSLContext ssl = serverSSLContext(args);
@@ -35,8 +37,8 @@ public class Server {
                 }
             });
 
-            UserAuthenticator auth = new UserAuthenticator();
-            server.createContext("/warning", new WarningHandler()).setAuthenticator(auth);
+            UserAuthenticator auth = new UserAuthenticator(database);
+            server.createContext("/warning", new WarningHandler(database)).setAuthenticator(auth);
             server.createContext("/registration", new RegistrationHandler(auth));
 
             server.start();

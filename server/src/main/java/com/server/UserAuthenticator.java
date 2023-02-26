@@ -1,31 +1,24 @@
 package com.server;
 
+import com.server.storage.MessageDatabase;
 import com.sun.net.httpserver.BasicAuthenticator;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class UserAuthenticator extends BasicAuthenticator {
 
-    private final Map<String, User> users;
+    private final MessageDatabase database;
 
-    public UserAuthenticator() {
+    public UserAuthenticator(MessageDatabase database) {
         super("warning");
-        this.users = new HashMap<>();
-        users.put("dummy", new User("dummy", "password", "dummy@example.com"));
+        this.database = database;
     }
 
     @Override
     public boolean checkCredentials(String username, String password) {
-        return users.containsKey(username) && users.get(username).getPassword().equals(password);
+        return database.checkCredentials(username, password);
     }
 
     public boolean register(String username, String password, String email) {
-        if (users.containsKey(username)) {
-            return false;
-        }
-        users.put(username, new User(username, password, email));
-        return true;
+        return database.register(username, password, email);
     }
 
 }
