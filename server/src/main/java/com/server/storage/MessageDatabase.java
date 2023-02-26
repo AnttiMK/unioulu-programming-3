@@ -9,33 +9,26 @@ public class MessageDatabase {
     private Connection connection;
 
     public MessageDatabase() {
-        try {
-            this.init(getConnection());
-        } catch (SQLException e) {
-            System.err.println("Error connecting to database");
-            e.printStackTrace();
-        }
-
+        this.init();
     }
 
     public Connection getConnection() throws SQLException {
-        boolean exists = new File(DB_PATH).exists();
-        String url = "jdbc:sqlite:" + DB_PATH;
-        this.connection = DriverManager.getConnection(url);
-        if (!exists) {
-            System.out.println("Database file not found, creating new database");
-            init(connection);
-        }
         return connection;
     }
 
-    private void init(Connection connection) {
+    private void init() {
+        boolean exists = new File(DB_PATH).exists();
+        if (exists) return;
+
         try {
+            String url = "jdbc:sqlite:" + DB_PATH;
+            this.connection = DriverManager.getConnection(url);
+            System.out.println("Database file not found, creating new database");
             executeUpdate(connection.prepareStatement(DBQueries.CREATE_TABLE_USERS));
             executeUpdate(connection.prepareStatement(DBQueries.CREATE_TABLE_MESSAGES));
             executeUpdate(connection.prepareStatement(DBQueries.INSERT_DUMMY_USER));
         } catch (SQLException e) {
-            System.err.println("Error creating database tables");
+            System.err.println("Error while initializing database: " + e.getMessage());
             e.printStackTrace();
         }
 
