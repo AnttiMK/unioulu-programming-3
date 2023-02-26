@@ -87,7 +87,8 @@ public class MessageDatabase {
             ps.setDouble(3, longitude);
             ps.setLong(4, sent);
             ps.setString(5, dangerType);
-            ps.executeUpdate();
+            int rows = ps.executeUpdate();
+            System.out.println("Inserted " + rows + " messages");
         }
     }
 
