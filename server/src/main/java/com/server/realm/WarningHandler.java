@@ -63,12 +63,14 @@ public class WarningHandler implements HttpHandler {
             exchange.getResponseBody().write(responseBytes);
             exchange.getResponseBody().close();
         } catch (SQLException e) {
+            e.printStackTrace();
             String message = "Error while fetching messages: " + e.getMessage();
             byte[] response = message.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(500, response.length);
             exchange.getResponseBody().write(response);
             exchange.getResponseBody().close();
         } catch (Exception e) {
+            e.printStackTrace();
             byte[] response = "Error while parsing JSON".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(500, response.length);
             exchange.getResponseBody().write(response);
@@ -90,17 +92,20 @@ public class WarningHandler implements HttpHandler {
             exchange.sendResponseHeaders(200, -1);
             exchange.getResponseBody().close();
         } catch (DateTimeException e) {
+            e.printStackTrace();
             byte[] response = "Invalid date format".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(400, response.length);
             exchange.getResponseBody().write(response);
             exchange.getResponseBody().close();
         } catch (SQLException e) {
+            e.printStackTrace();
             String message = "Database error: " + e.getMessage();
             byte[] response = message.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(500, response.length);
             exchange.getResponseBody().write(response);
             exchange.getResponseBody().close();
         } catch (Exception e) {
+            e.printStackTrace();
             byte[] response = "Invalid JSON".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(400, response.length);
             exchange.getResponseBody().write(response);
