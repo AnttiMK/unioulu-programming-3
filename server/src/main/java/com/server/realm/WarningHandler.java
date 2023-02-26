@@ -57,6 +57,7 @@ public class WarningHandler implements HttpHandler {
                 array.put(json);
             }
 
+            System.out.println(array);
             byte[] responseBytes = array.toString().getBytes(StandardCharsets.UTF_8);
             exchange.setAttribute("content-type", "application/json");
             exchange.sendResponseHeaders(200, responseBytes.length);
@@ -80,6 +81,7 @@ public class WarningHandler implements HttpHandler {
 
     private void handlePost(HttpExchange exchange) throws IOException {
         String requestBody = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
+        System.out.println("Received message: " + requestBody);
         try {
             JSONObject json = new JSONObject(requestBody);
             String nickname = json.getString("nickname");
