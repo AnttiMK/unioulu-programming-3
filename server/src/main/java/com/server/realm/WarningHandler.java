@@ -59,8 +59,8 @@ public class WarningHandler implements HttpHandler {
             JSONObject json = new JSONObject(requestBody);
             messageStore.add(new WarningMessage(
                     json.getString("nickname"),
-                    json.getString("latitude"),
-                    json.getString("longitude"),
+                    json.getDouble("latitude"),
+                    json.getDouble("longitude"),
                     json.getString("dangertype")
             ));
             exchange.sendResponseHeaders(200, -1);

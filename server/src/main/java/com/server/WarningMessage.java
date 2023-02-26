@@ -3,11 +3,11 @@ package com.server;
 public class WarningMessage {
 
     private String nickname;
-    private String latitude;
-    private String longitude;
+    private double latitude;
+    private double longitude;
     private String dangertype;
 
-    public WarningMessage(String nickname, String latitude, String longitude, String dangertype) {
+    public WarningMessage(String nickname, double latitude, double longitude, String dangertype) {
         this.nickname = nickname;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -22,19 +22,19 @@ public class WarningMessage {
         this.nickname = nickname;
     }
 
-    public String getLatitude() {
+    public double getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(String latitude) {
+    public void setLatitude(double latitude) {
         this.latitude = latitude;
     }
 
-    public String getLongitude() {
+    public double getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(String longitude) {
+    public void setLongitude(double longitude) {
         this.longitude = longitude;
     }
 
