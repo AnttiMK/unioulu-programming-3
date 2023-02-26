@@ -10,11 +10,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.DateTimeException;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
@@ -45,36 +42,25 @@ public class WarningHandler implements HttpHandler {
 
     private void handleGet(HttpExchange exchange) throws IOException {
         try {
-            ResultSet rs = database.getMessages();
-            JSONArray array = new JSONArray();
-            int count = 0;
-            while (rs.next()) {
-                count++;
-                JSONObject json = new JSONObject();
-                json.put("nickname", rs.getString("nickname"));
-                json.put("latitude", rs.getDouble("latitude"));
-                json.put("longitude", rs.getDouble("longitude"));
-                String sentDate = Instant.ofEpochMilli(rs.getLong("sent")).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
-                json.put("sent", sentDate);
-                json.put("dangertype", rs.getString("dangertype"));
-                array.put(json);
+            JSONArray array = database.getMessages();
+            if (array == null) {
+                exchange.sendResponseHeaders(204, -1);
+                exchange.getResponseBody().close();
+                return;
             }
-            System.out.println("Sent " + count + " messages");
-            System.out.println(array);
+
             byte[] responseBytes = array.toString().getBytes(StandardCharsets.UTF_8);
             exchange.setAttribute("content-type", "application/json");
             exchange.sendResponseHeaders(200, responseBytes.length);
             exchange.getResponseBody().write(responseBytes);
             exchange.getResponseBody().close();
         } catch (SQLException e) {
-            e.printStackTrace();
             String message = "Error while fetching messages: " + e.getMessage();
             byte[] response = message.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(500, response.length);
             exchange.getResponseBody().write(response);
             exchange.getResponseBody().close();
         } catch (Exception e) {
-            e.printStackTrace();
             byte[] response = "Error while parsing JSON".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(500, response.length);
             exchange.getResponseBody().write(response);
@@ -84,7 +70,6 @@ public class WarningHandler implements HttpHandler {
 
     private void handlePost(HttpExchange exchange) throws IOException {
         String requestBody = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
-        System.out.println("Received message: " + requestBody);
         try {
             JSONObject json = new JSONObject(requestBody);
             String nickname = json.getString("nickname");
@@ -97,20 +82,17 @@ public class WarningHandler implements HttpHandler {
             exchange.sendResponseHeaders(200, -1);
             exchange.getResponseBody().close();
         } catch (DateTimeException e) {
-            e.printStackTrace();
             byte[] response = "Invalid date format".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(400, response.length);
             exchange.getResponseBody().write(response);
             exchange.getResponseBody().close();
         } catch (SQLException e) {
-            e.printStackTrace();
             String message = "Database error: " + e.getMessage();
             byte[] response = message.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(500, response.length);
             exchange.getResponseBody().write(response);
             exchange.getResponseBody().close();
         } catch (Exception e) {
-            e.printStackTrace();
             byte[] response = "Invalid JSON".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(400, response.length);
             exchange.getResponseBody().write(response);

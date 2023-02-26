@@ -1,10 +1,17 @@
 package com.server.storage;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.sql.*;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 public class MessageDatabase {
 
+    private static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
     private static final String DB_PATH = "database.db";
     private Connection connection;
 
@@ -18,11 +25,12 @@ public class MessageDatabase {
 
     private void init() {
         boolean exists = new File(DB_PATH).exists();
-        if (exists) return;
 
         try {
             String url = "jdbc:sqlite:" + DB_PATH;
             this.connection = DriverManager.getConnection(url);
+            if (exists) return;
+
             System.out.println("Database file not found, creating new database");
             runInitQuery(connection.prepareStatement(DBQueries.CREATE_TABLE_USERS));
             runInitQuery(connection.prepareStatement(DBQueries.CREATE_TABLE_MESSAGES));
@@ -87,14 +95,31 @@ public class MessageDatabase {
             ps.setDouble(3, longitude);
             ps.setLong(4, sent);
             ps.setString(5, dangerType);
-            int rows = ps.executeUpdate();
-            System.out.println("Inserted " + rows + " messages");
+            ps.executeUpdate();
         }
     }
 
-    public ResultSet getMessages() throws SQLException {
+    public JSONArray getMessages() throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.GET_ALL_MESSAGES)) {
-            return ps.executeQuery();
+            ResultSet rs = ps.executeQuery();
+            JSONArray array = new JSONArray();
+            int count = 0;
+            while (rs.next()) {
+                count++;
+                JSONObject json = new JSONObject();
+                json.put("nickname", rs.getString("nickname"));
+                json.put("latitude", rs.getDouble("latitude"));
+                json.put("longitude", rs.getDouble("longitude"));
+                String sentDate = Instant.ofEpochMilli(rs.getLong("sent")).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+                json.put("sent", sentDate);
+                json.put("dangertype", rs.getString("dangertype"));
+                array.put(json);
+            }
+            if (count == 0) {
+                return null;
+            } else {
+                return array;
+            }
         }
     }
 
