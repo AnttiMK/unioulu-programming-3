@@ -24,9 +24,9 @@ public class MessageDatabase {
             String url = "jdbc:sqlite:" + DB_PATH;
             this.connection = DriverManager.getConnection(url);
             System.out.println("Database file not found, creating new database");
-            executeUpdate(connection.prepareStatement(DBQueries.CREATE_TABLE_USERS));
-            executeUpdate(connection.prepareStatement(DBQueries.CREATE_TABLE_MESSAGES));
-            executeUpdate(connection.prepareStatement(DBQueries.INSERT_DUMMY_USER));
+            runInitQuery(connection.prepareStatement(DBQueries.CREATE_TABLE_USERS));
+            runInitQuery(connection.prepareStatement(DBQueries.CREATE_TABLE_MESSAGES));
+            runInitQuery(connection.prepareStatement(DBQueries.INSERT_DUMMY_USER));
         } catch (SQLException e) {
             System.err.println("Error while initializing database: " + e.getMessage());
             e.printStackTrace();
@@ -34,18 +34,7 @@ public class MessageDatabase {
 
     }
 
-    public ResultSet query(PreparedStatement ps) {
-        try (ps) {
-            ps.execute();
-            return ps.getResultSet();
-        } catch (SQLException e) {
-            System.err.println("Error executing query");
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public void executeUpdate(PreparedStatement ps) {
+    public void runInitQuery(PreparedStatement ps) {
         try (ps) {
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -58,7 +47,7 @@ public class MessageDatabase {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.CHECK_CREDENTIALS)) {
             ps.setString(1, username);
             ps.setString(2, password);
-            ResultSet rs = query(ps);
+            ResultSet rs = ps.executeQuery();
             return rs.next();
         } catch (SQLException e) {
             System.err.println("Error checking credentials");
@@ -71,7 +60,7 @@ public class MessageDatabase {
         try {
             try (PreparedStatement ps = connection.prepareStatement(DBQueries.CHECK_USER_EXISTS)) {
                 ps.setString(1, username);
-                ResultSet rs = query(ps);
+                ResultSet rs = ps.executeQuery();
                 if (rs.next()) {
                     return false;
                 }
@@ -81,7 +70,7 @@ public class MessageDatabase {
                 ps.setString(1, username);
                 ps.setString(2, password);
                 ps.setString(3, email);
-                executeUpdate(ps);
+                ps.executeUpdate();
                 return true;
             }
         } catch (SQLException e) {
