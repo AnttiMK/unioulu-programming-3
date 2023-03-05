@@ -77,8 +77,24 @@ public class WarningHandler implements HttpHandler {
             double longitude = json.getDouble("longitude");
             long sent = ZonedDateTime.parse(json.getString("sent"), DateTimeFormatter.ofPattern(DATE_PATTERN)).toInstant().toEpochMilli();
             String dangertype = json.getString("dangertype");
+            if (!dangertype.equals("Deer") && !dangertype.equals("Reindeer") && !dangertype.equals("Moose") && !dangertype.equals("Other")) {
+                byte[] response = "Invalid danger type".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(400, response.length);
+                exchange.getResponseBody().write(response);
+                exchange.getResponseBody().close();
+                return;
+            }
 
-            database.handleMessage(nickname, latitude, longitude, sent, dangertype);
+            String areaCode = null;
+            String phoneNumber = null;
+            if (json.has("areacode")) {
+                areaCode = json.getString("areacode");
+            }
+            if (json.has("phonenumber")) {
+                phoneNumber = json.getString("phonenumber");
+            }
+
+            database.handleMessage(nickname, latitude, longitude, sent, dangertype, areaCode, phoneNumber);
             exchange.sendResponseHeaders(200, -1);
             exchange.getResponseBody().close();
         } catch (DateTimeException e) {
@@ -87,6 +103,8 @@ public class WarningHandler implements HttpHandler {
             exchange.getResponseBody().write(response);
             exchange.getResponseBody().close();
         } catch (SQLException e) {
+            System.out.println("Database error: " + e.getMessage());
+            e.printStackTrace();
             String message = "Database error: " + e.getMessage();
             byte[] response = message.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(500, response.length);

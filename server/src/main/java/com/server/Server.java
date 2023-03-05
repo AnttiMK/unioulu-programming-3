@@ -15,6 +15,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
+import java.util.concurrent.Executors;
 
 public class Server {
 
@@ -41,6 +42,8 @@ public class Server {
             server.createContext("/warning", new WarningHandler(database)).setAuthenticator(auth);
             server.createContext("/registration", new RegistrationHandler(auth));
 
+            server.setExecutor(Executors.newCachedThreadPool());
+            addShutdownHook(server, database);
             server.start();
             System.out.println("Started web server on " + server.getAddress());
         } catch (FileNotFoundException e) {
@@ -74,6 +77,14 @@ public class Server {
         SSLContext ssl = SSLContext.getInstance("TLS");
         ssl.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
         return ssl;
+    }
+
+    private static void addShutdownHook(HttpsServer server, MessageDatabase database) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Shutting down server...");
+            server.stop(0);
+            database.close();
+        }));
     }
 
 }

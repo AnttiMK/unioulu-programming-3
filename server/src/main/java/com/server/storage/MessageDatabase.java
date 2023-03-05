@@ -1,18 +1,22 @@
 package com.server.storage;
 
+import org.apache.commons.codec.digest.Crypt;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.security.SecureRandom;
 import java.sql.*;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 
 public class MessageDatabase {
 
     private static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
     private static final String DB_PATH = "database.db";
+    private final SecureRandom random = new SecureRandom();
     private Connection connection;
 
     public MessageDatabase() {
@@ -54,9 +58,12 @@ public class MessageDatabase {
     public boolean checkCredentials(String username, String password) {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.CHECK_CREDENTIALS)) {
             ps.setString(1, username);
-            ps.setString(2, password);
             ResultSet rs = ps.executeQuery();
-            return rs.next();
+            if (rs.next()) {
+                String hashedPw = rs.getString("password");
+                return Crypt.crypt(password, hashedPw).equals(hashedPw);
+            }
+            return false;
         } catch (SQLException e) {
             System.err.println("Error checking credentials");
             e.printStackTrace();
@@ -74,9 +81,15 @@ public class MessageDatabase {
                 }
             }
 
+            byte[] bytes = new byte[13];
+            random.nextBytes(bytes);
+            String saltBytes = new String(Base64.getEncoder().encode(bytes));
+            String salt = "$6$" + saltBytes;
+            String hashedPw = Crypt.crypt(password, salt);
+
             try (PreparedStatement ps = connection.prepareStatement(DBQueries.INSERT_USER)) {
                 ps.setString(1, username);
-                ps.setString(2, password);
+                ps.setString(2, hashedPw);
                 ps.setString(3, email);
                 ps.executeUpdate();
                 return true;
@@ -88,13 +101,15 @@ public class MessageDatabase {
         }
     }
 
-    public void handleMessage(String nickname, double latitude, double longitude, long sent, String dangerType) throws SQLException {
+    public void handleMessage(String nickname, double latitude, double longitude, long sent, String dangerType, String areaCode, String phoneNumber) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.INSERT_MESSAGE)) {
             ps.setString(1, nickname);
             ps.setDouble(2, latitude);
             ps.setDouble(3, longitude);
             ps.setLong(4, sent);
             ps.setString(5, dangerType);
+            ps.setString(6, areaCode);
+            ps.setString(7, phoneNumber);
             ps.executeUpdate();
         }
     }
@@ -111,9 +126,29 @@ public class MessageDatabase {
                 String sentDate = Instant.ofEpochMilli(rs.getLong("sent")).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
                 json.put("sent", sentDate);
                 json.put("dangertype", rs.getString("dangertype"));
+
+                String areacode = rs.getString("areacode");
+                if (areacode != null) {
+                    json.put("areacode", areacode);
+                }
+
+                String phonenumber = rs.getString("phonenumber");
+                if (phonenumber != null) {
+                    json.put("phonenumber", phonenumber);
+                }
+
                 array.put(json);
             }
             return array;
+        }
+    }
+
+    public void close() {
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            System.err.println("Error while closing database connection");
+            e.printStackTrace();
         }
     }
 
