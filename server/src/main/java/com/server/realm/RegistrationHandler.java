@@ -28,7 +28,7 @@ public class RegistrationHandler implements HttpHandler {
 
         String jsonString = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
                 .lines()
-                .collect(Collectors.joining("\n"));
+                .collect(Collectors.joining());
 
         JSONObject json;
         try {

@@ -33,10 +33,7 @@ public class WarningHandler implements HttpHandler {
         } else if (requestMethod.equals("POST")) {
             handlePost(exchange);
         } else {
-            byte[] response = "Not supported".getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(400, response.length);
-            exchange.getResponseBody().write(response);
-            exchange.getResponseBody().close();
+            sendBadRequest(exchange, "Not supported");
         }
     }
 
@@ -48,40 +45,25 @@ public class WarningHandler implements HttpHandler {
                 exchange.getResponseBody().close();
                 return;
             }
-
-            byte[] responseBytes = array.toString().getBytes(StandardCharsets.UTF_8);
-            exchange.setAttribute("content-type", "application/json");
-            exchange.sendResponseHeaders(200, responseBytes.length);
-            exchange.getResponseBody().write(responseBytes);
-            exchange.getResponseBody().close();
+            sendJSONResponse(exchange, array.toString().getBytes());
         } catch (SQLException e) {
-            String message = "Error while fetching messages: " + e.getMessage();
-            byte[] response = message.getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(500, response.length);
-            exchange.getResponseBody().write(response);
-            exchange.getResponseBody().close();
+            sendResponse(exchange, 500, "Error while fetching messages: " + e.getMessage());
         } catch (Exception e) {
-            byte[] response = "Error while parsing JSON".getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(500, response.length);
-            exchange.getResponseBody().write(response);
-            exchange.getResponseBody().close();
+            sendResponse(exchange, 500, "Error while parsing JSON");
         }
     }
 
     private void handlePost(HttpExchange exchange) throws IOException {
-        String requestBody = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
+        String requestBody = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining());
         try {
             JSONObject json = new JSONObject(requestBody);
             String nickname = json.getString("nickname");
             double latitude = json.getDouble("latitude");
             double longitude = json.getDouble("longitude");
             long sent = ZonedDateTime.parse(json.getString("sent"), DateTimeFormatter.ofPattern(DATE_PATTERN)).toInstant().toEpochMilli();
-            String dangertype = json.getString("dangertype");
-            if (!dangertype.equals("Deer") && !dangertype.equals("Reindeer") && !dangertype.equals("Moose") && !dangertype.equals("Other")) {
-                byte[] response = "Invalid danger type".getBytes(StandardCharsets.UTF_8);
-                exchange.sendResponseHeaders(400, response.length);
-                exchange.getResponseBody().write(response);
-                exchange.getResponseBody().close();
+            String dangerType = json.getString("dangertype");
+            if (!dangerType.equals("Deer") && !dangerType.equals("Reindeer") && !dangerType.equals("Moose") && !dangerType.equals("Other")) {
+                sendBadRequest(exchange, "Invalid dangertype");
                 return;
             }
 
@@ -94,29 +76,38 @@ public class WarningHandler implements HttpHandler {
                 phoneNumber = json.getString("phonenumber");
             }
 
-            database.handleMessage(nickname, latitude, longitude, sent, dangertype, areaCode, phoneNumber);
+            database.handleMessage(nickname, latitude, longitude, sent, dangerType, areaCode, phoneNumber);
             exchange.sendResponseHeaders(200, -1);
             exchange.getResponseBody().close();
         } catch (DateTimeException e) {
-            byte[] response = "Invalid date format".getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(400, response.length);
-            exchange.getResponseBody().write(response);
-            exchange.getResponseBody().close();
+            sendBadRequest(exchange, "Invalid date format");
         } catch (SQLException e) {
             System.out.println("Database error: " + e.getMessage());
             e.printStackTrace();
             String message = "Database error: " + e.getMessage();
-            byte[] response = message.getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(500, response.length);
-            exchange.getResponseBody().write(response);
-            exchange.getResponseBody().close();
+            sendResponse(exchange, 500, message);
         } catch (Exception e) {
-            byte[] response = "Invalid JSON".getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(400, response.length);
-            exchange.getResponseBody().write(response);
-            exchange.getResponseBody().close();
+            sendBadRequest(exchange, "Invalid JSON");
         }
 
+    }
+
+    private void sendBadRequest(HttpExchange exchange, String response) throws IOException {
+        sendResponse(exchange, 400, response);
+    }
+
+    private void sendResponse(HttpExchange exchange, int code, String response) throws IOException {
+        byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
+        exchange.sendResponseHeaders(code, responseBytes.length);
+        exchange.getResponseBody().write(responseBytes);
+        exchange.getResponseBody().close();
+    }
+
+    private void sendJSONResponse(HttpExchange exchange, byte[] json) throws IOException {
+        exchange.setAttribute("content-type", "application/json");
+        exchange.sendResponseHeaders(200, json.length);
+        exchange.getResponseBody().write(json);
+        exchange.getResponseBody().close();
     }
 
 }
