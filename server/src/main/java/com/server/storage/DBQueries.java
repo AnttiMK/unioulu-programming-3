@@ -9,13 +9,16 @@ public class DBQueries {
             + ")";
 
     public static final String CREATE_TABLE_MESSAGES = "CREATE TABLE IF NOT EXISTS messages ("
+            + "id INTEGER PRIMARY KEY,"
             + "nickname TEXT NOT NULL,"
             + "latitude DOUBLE NOT NULL,"
             + "longitude DOUBLE NOT NULL,"
             + "sent INTEGER NOT NULL,"
             + "dangertype TEXT NOT NULL,"
             + "areacode TEXT,"
-            + "phonenumber TEXT"
+            + "phonenumber TEXT,"
+            + "updatereason TEXT,"
+            + "modified TEXT"
             + ")";
 
     public static final String INSERT_DUMMY_USER = "INSERT INTO users (username, password, email) "
@@ -30,6 +33,8 @@ public class DBQueries {
 
     public static final String INSERT_MESSAGE = "INSERT INTO messages (nickname, latitude, longitude, sent, dangertype, areacode, phonenumber) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+    public static final String UPDATE_MESSAGE = "UPDATE messages SET nickname = ?, latitude = ?, longitude = ?, sent = ?, dangertype = ?, areacode = ?, phonenumber = ?, updatereason = ?, modified = ? WHERE id = ?";
 
     public static final String GET_ALL_MESSAGES = "SELECT * FROM messages";
 

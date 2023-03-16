@@ -54,9 +54,32 @@ public class WarningHandler implements HttpHandler {
     }
 
     private void handlePost(HttpExchange exchange) throws IOException {
-        String requestBody = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining());
         try {
-            JSONObject json = new JSONObject(requestBody);
+            JSONObject json = new JSONObject(new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining()));
+            if (json.has("query")) {
+                handleQuery(exchange, json);
+            } else { // Assume regular message
+                handleMessage(exchange, json);
+            }
+        } catch (Exception e) {
+            sendBadRequest(exchange, "Invalid JSON");
+        }
+
+    }
+
+    private void handleQuery(HttpExchange exchange, JSONObject json) throws IOException {
+        String queryType = json.getString("query");
+        if ("user".equals(queryType) && json.has("nickname")) {
+
+        } else if ("time".equals(queryType) && json.has("timestart") && json.has("timeend")) {
+
+        } else {
+            sendBadRequest(exchange, "Invalid query type or missing parameters");
+        }
+    }
+
+    private void handleMessage(HttpExchange exchange, JSONObject json) throws IOException, SQLException {
+        try {
             String nickname = json.getString("nickname");
             double latitude = json.getDouble("latitude");
             double longitude = json.getDouble("longitude");
@@ -89,7 +112,6 @@ public class WarningHandler implements HttpHandler {
         } catch (Exception e) {
             sendBadRequest(exchange, "Invalid JSON");
         }
-
     }
 
     private void sendBadRequest(HttpExchange exchange, String response) throws IOException {
