@@ -101,7 +101,14 @@ public class MessageDatabase {
         }
     }
 
-    public void handleMessage(String nickname, double latitude, double longitude, long sent, String dangerType, String areaCode, String phoneNumber) throws SQLException {
+    public void submitMessage(String nickname,
+                              double latitude,
+                              double longitude,
+                              long sent,
+                              String dangerType,
+                              String areaCode,
+                              String phoneNumber,
+                              String username) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.INSERT_MESSAGE)) {
             ps.setString(1, nickname);
             ps.setDouble(2, latitude);
@@ -110,6 +117,32 @@ public class MessageDatabase {
             ps.setString(5, dangerType);
             ps.setString(6, areaCode);
             ps.setString(7, phoneNumber);
+            ps.setString(8, username);
+            ps.executeUpdate();
+        }
+    }
+
+    public void updateMessage(int id,
+                              String nickname,
+                              double latitude,
+                              double longitude,
+                              long sent,
+                              String dangerType,
+                              String areaCode,
+                              String phoneNumber,
+                              String updateReason,
+                              long modified) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(DBQueries.UPDATE_MESSAGE)) {
+            ps.setString(1, nickname);
+            ps.setDouble(2, latitude);
+            ps.setDouble(3, longitude);
+            ps.setLong(4, sent);
+            ps.setString(5, dangerType);
+            ps.setString(6, areaCode);
+            ps.setString(7, phoneNumber);
+            ps.setString(8, updateReason);
+            ps.setLong(9, modified);
+            ps.setInt(10, id);
             ps.executeUpdate();
         }
     }
@@ -121,29 +154,10 @@ public class MessageDatabase {
      */
     public JSONArray getMessages() throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.GET_ALL_MESSAGES)) {
-            // TODO refactor dupe code
             ResultSet rs = ps.executeQuery();
             JSONArray array = new JSONArray();
             while (rs.next()) {
-                JSONObject json = new JSONObject();
-                json.put("nickname", rs.getString("nickname"));
-                json.put("latitude", rs.getDouble("latitude"));
-                json.put("longitude", rs.getDouble("longitude"));
-                String sentDate = Instant.ofEpochMilli(rs.getLong("sent")).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
-                json.put("sent", sentDate);
-                json.put("dangertype", rs.getString("dangertype"));
-
-                String areacode = rs.getString("areacode");
-                if (areacode != null) {
-                    json.put("areacode", areacode);
-                }
-
-                String phonenumber = rs.getString("phonenumber");
-                if (phonenumber != null) {
-                    json.put("phonenumber", phonenumber);
-                }
-
-                array.put(json);
+                parseMsgToArray(rs, array);
             }
             return array;
         }
@@ -158,29 +172,10 @@ public class MessageDatabase {
     public JSONArray getMessages(String nickname) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.GET_MESSAGES_BY_NICKNAME)) {
             ps.setString(1, nickname);
-            // TODO refactor dupe code
             ResultSet rs = ps.executeQuery();
             JSONArray array = new JSONArray();
             while (rs.next()) {
-                JSONObject json = new JSONObject();
-                json.put("nickname", rs.getString("nickname"));
-                json.put("latitude", rs.getDouble("latitude"));
-                json.put("longitude", rs.getDouble("longitude"));
-                String sentDate = Instant.ofEpochMilli(rs.getLong("sent")).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
-                json.put("sent", sentDate);
-                json.put("dangertype", rs.getString("dangertype"));
-
-                String areacode = rs.getString("areacode");
-                if (areacode != null) {
-                    json.put("areacode", areacode);
-                }
-
-                String phonenumber = rs.getString("phonenumber");
-                if (phonenumber != null) {
-                    json.put("phonenumber", phonenumber);
-                }
-
-                array.put(json);
+                parseMsgToArray(rs, array);
             }
             return array;
         }
@@ -197,31 +192,65 @@ public class MessageDatabase {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.GET_MESSAGES_BY_TIME)) {
             ps.setLong(1, timeStart);
             ps.setLong(2, timeEnd);
-            // TODO refactor dupe code
             ResultSet rs = ps.executeQuery();
             JSONArray array = new JSONArray();
             while (rs.next()) {
-                JSONObject json = new JSONObject();
-                json.put("nickname", rs.getString("nickname"));
-                json.put("latitude", rs.getDouble("latitude"));
-                json.put("longitude", rs.getDouble("longitude"));
-                String sentDate = Instant.ofEpochMilli(rs.getLong("sent")).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
-                json.put("sent", sentDate);
-                json.put("dangertype", rs.getString("dangertype"));
-
-                String areacode = rs.getString("areacode");
-                if (areacode != null) {
-                    json.put("areacode", areacode);
-                }
-
-                String phonenumber = rs.getString("phonenumber");
-                if (phonenumber != null) {
-                    json.put("phonenumber", phonenumber);
-                }
-
-                array.put(json);
+                parseMsgToArray(rs, array);
             }
             return array;
+        }
+    }
+
+    private void parseMsgToArray(ResultSet rs, JSONArray array) throws SQLException {
+        JSONObject json = new JSONObject();
+        json.put("id", rs.getInt("id"));
+        json.put("nickname", rs.getString("nickname"));
+        json.put("latitude", rs.getDouble("latitude"));
+        json.put("longitude", rs.getDouble("longitude"));
+        String sentDate = epochMilliToDateString(rs.getLong("sent"));
+        json.put("sent", sentDate);
+        json.put("dangertype", rs.getString("dangertype"));
+
+        String areacode = rs.getString("areacode");
+        if (areacode != null) {
+            json.put("areacode", areacode);
+        }
+
+        String phonenumber = rs.getString("phonenumber");
+        if (phonenumber != null) {
+            json.put("phonenumber", phonenumber);
+        }
+
+        String updateReason = rs.getString("updatereason");
+        if (updateReason != null) {
+            json.put("updatereason", updateReason);
+        }
+
+        long modified = rs.getLong("modified");
+        if (modified != 0) {
+            json.put("modified", epochMilliToDateString(modified));
+        }
+
+        array.put(json);
+    }
+
+    private String epochMilliToDateString(long epochMs) {
+        return Instant.ofEpochMilli(epochMs).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+    }
+
+    /**
+     * Checks if the given username is the sender of the given message
+     *
+     * @param id       the id of the message
+     * @param username the username to check
+     * @return true if the username is the sender of the message, false otherwise
+     */
+    public boolean isSender(int id, String username) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(DBQueries.IS_SENDER)) {
+            ps.setInt(1, id);
+            ps.setString(2, username);
+            ResultSet rs = ps.executeQuery();
+            return rs.next();
         }
     }
 
