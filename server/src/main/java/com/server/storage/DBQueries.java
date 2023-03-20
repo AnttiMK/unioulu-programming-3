@@ -38,4 +38,7 @@ public class DBQueries {
 
     public static final String GET_ALL_MESSAGES = "SELECT * FROM messages";
 
+    public static final String GET_MESSAGES_BY_NICKNAME = "SELECT * FROM messages WHERE nickname = ?";
+
+    public static final String GET_MESSAGES_BY_TIME = "SELECT * FROM messages WHERE sent >= ? AND sent <= ?";
 }

@@ -114,8 +114,90 @@ public class MessageDatabase {
         }
     }
 
+    /**
+     * {@return a JSONArray containing all of the messages in the database}
+     *
+     * @throws SQLException if an error occurs while querying the database
+     */
     public JSONArray getMessages() throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.GET_ALL_MESSAGES)) {
+            // TODO refactor dupe code
+            ResultSet rs = ps.executeQuery();
+            JSONArray array = new JSONArray();
+            while (rs.next()) {
+                JSONObject json = new JSONObject();
+                json.put("nickname", rs.getString("nickname"));
+                json.put("latitude", rs.getDouble("latitude"));
+                json.put("longitude", rs.getDouble("longitude"));
+                String sentDate = Instant.ofEpochMilli(rs.getLong("sent")).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+                json.put("sent", sentDate);
+                json.put("dangertype", rs.getString("dangertype"));
+
+                String areacode = rs.getString("areacode");
+                if (areacode != null) {
+                    json.put("areacode", areacode);
+                }
+
+                String phonenumber = rs.getString("phonenumber");
+                if (phonenumber != null) {
+                    json.put("phonenumber", phonenumber);
+                }
+
+                array.put(json);
+            }
+            return array;
+        }
+    }
+
+    /**
+     * Gets all the messages for a specific nickname
+     *
+     * @param nickname the nickname to get the messages for
+     * @return a JSONArray containing the messages
+     */
+    public JSONArray getMessages(String nickname) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(DBQueries.GET_MESSAGES_BY_NICKNAME)) {
+            ps.setString(1, nickname);
+            // TODO refactor dupe code
+            ResultSet rs = ps.executeQuery();
+            JSONArray array = new JSONArray();
+            while (rs.next()) {
+                JSONObject json = new JSONObject();
+                json.put("nickname", rs.getString("nickname"));
+                json.put("latitude", rs.getDouble("latitude"));
+                json.put("longitude", rs.getDouble("longitude"));
+                String sentDate = Instant.ofEpochMilli(rs.getLong("sent")).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
+                json.put("sent", sentDate);
+                json.put("dangertype", rs.getString("dangertype"));
+
+                String areacode = rs.getString("areacode");
+                if (areacode != null) {
+                    json.put("areacode", areacode);
+                }
+
+                String phonenumber = rs.getString("phonenumber");
+                if (phonenumber != null) {
+                    json.put("phonenumber", phonenumber);
+                }
+
+                array.put(json);
+            }
+            return array;
+        }
+    }
+
+    /**
+     * Gets all messages sent inside a given time period
+     *
+     * @param timeStart the start of the time period
+     * @param timeEnd   the end of the time period
+     * @return a JSONArray containing the messages
+     */
+    public JSONArray getMessages(long timeStart, long timeEnd) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(DBQueries.GET_MESSAGES_BY_TIME)) {
+            ps.setLong(1, timeStart);
+            ps.setLong(2, timeEnd);
+            // TODO refactor dupe code
             ResultSet rs = ps.executeQuery();
             JSONArray array = new JSONArray();
             while (rs.next()) {

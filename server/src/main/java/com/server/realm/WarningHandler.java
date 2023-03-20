@@ -41,15 +41,12 @@ public class WarningHandler implements HttpHandler {
         try {
             JSONArray array = database.getMessages();
             if (array.isEmpty()) {
-                exchange.sendResponseHeaders(204, -1);
-                exchange.getResponseBody().close();
+                sendNoContent(exchange);
                 return;
             }
             sendJSONResponse(exchange, array.toString().getBytes());
         } catch (SQLException e) {
             sendResponse(exchange, 500, "Error while fetching messages: " + e.getMessage());
-        } catch (Exception e) {
-            sendResponse(exchange, 500, "Error while parsing JSON");
         }
     }
 
@@ -70,12 +67,41 @@ public class WarningHandler implements HttpHandler {
     private void handleQuery(HttpExchange exchange, JSONObject json) throws IOException {
         String queryType = json.getString("query");
         if ("user".equals(queryType) && json.has("nickname")) {
-
+            try {
+                String nickname = json.getString("nickname");
+                JSONArray array = database.getMessages(nickname);
+                if (array.isEmpty()) {
+                    sendNoContent(exchange);
+                    return;
+                }
+                sendJSONResponse(exchange, array.toString().getBytes());
+            } catch (SQLException e) {
+                sendResponse(exchange, 500, "Error while fetching messages: " + e.getMessage());
+            }
         } else if ("time".equals(queryType) && json.has("timestart") && json.has("timeend")) {
-
+            try {
+                long timeStart = dateStringToEpochMilli(json.getString("timestart"));
+                long timeEnd = dateStringToEpochMilli(json.getString("timeend"));
+                JSONArray array = database.getMessages(timeStart, timeEnd);
+                if (array.isEmpty()) {
+                    sendNoContent(exchange);
+                }
+                sendJSONResponse(exchange, array.toString().getBytes());
+            } catch (DateTimeException e) {
+                sendBadRequest(exchange, "Invalid date format");
+            } catch (SQLException e) {
+                sendResponse(exchange, 500, "Error while fetching messages: " + e.getMessage());
+            }
         } else {
             sendBadRequest(exchange, "Invalid query type or missing parameters");
         }
+    }
+
+    private void sendJSONResponse(HttpExchange exchange, byte[] json) throws IOException {
+        exchange.setAttribute("content-type", "application/json");
+        exchange.sendResponseHeaders(200, json.length);
+        exchange.getResponseBody().write(json);
+        exchange.getResponseBody().close();
     }
 
     private void handleMessage(HttpExchange exchange, JSONObject json) throws IOException, SQLException {
@@ -83,7 +109,7 @@ public class WarningHandler implements HttpHandler {
             String nickname = json.getString("nickname");
             double latitude = json.getDouble("latitude");
             double longitude = json.getDouble("longitude");
-            long sent = ZonedDateTime.parse(json.getString("sent"), DateTimeFormatter.ofPattern(DATE_PATTERN)).toInstant().toEpochMilli();
+            long sent = dateStringToEpochMilli(json.getString("sent"));
             String dangerType = json.getString("dangertype");
             if (!dangerType.equals("Deer") && !dangerType.equals("Reindeer") && !dangerType.equals("Moose") && !dangerType.equals("Other")) {
                 sendBadRequest(exchange, "Invalid dangertype");
@@ -114,21 +140,23 @@ public class WarningHandler implements HttpHandler {
         }
     }
 
+    private long dateStringToEpochMilli(String date) throws DateTimeException {
+        return ZonedDateTime.parse(date, DateTimeFormatter.ofPattern(DATE_PATTERN)).toInstant().toEpochMilli();
+    }
+
     private void sendBadRequest(HttpExchange exchange, String response) throws IOException {
         sendResponse(exchange, 400, response);
+    }
+
+    private void sendNoContent(HttpExchange exchange) throws IOException {
+        exchange.sendResponseHeaders(204, -1);
+        exchange.getResponseBody().close();
     }
 
     private void sendResponse(HttpExchange exchange, int code, String response) throws IOException {
         byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(code, responseBytes.length);
         exchange.getResponseBody().write(responseBytes);
-        exchange.getResponseBody().close();
-    }
-
-    private void sendJSONResponse(HttpExchange exchange, byte[] json) throws IOException {
-        exchange.setAttribute("content-type", "application/json");
-        exchange.sendResponseHeaders(200, json.length);
-        exchange.getResponseBody().write(json);
         exchange.getResponseBody().close();
     }
 
