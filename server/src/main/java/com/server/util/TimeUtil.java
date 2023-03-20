@@ -6,6 +6,9 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Utility class for time related operations.
+ */
 public final class TimeUtil {
 
     private static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSX";

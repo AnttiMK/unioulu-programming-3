@@ -5,6 +5,9 @@ import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Utility class for sending HTTP responses.
+ */
 public class ResponseUtil {
 
     private ResponseUtil() {
