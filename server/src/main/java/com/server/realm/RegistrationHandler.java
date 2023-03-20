@@ -22,17 +22,16 @@ public class RegistrationHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if (!exchange.getRequestMethod().equals("POST")) {
+            // Only POST is supported
             sendBadRequest(exchange, "Not supported");
             return;
         }
 
-        String jsonString = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
-                .lines()
-                .collect(Collectors.joining());
-
         JSONObject json;
         try {
-            json = new JSONObject(jsonString);
+            json = new JSONObject(new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))
+                    .lines()
+                    .collect(Collectors.joining()));
         } catch (Exception e) {
             sendBadRequest(exchange, "Invalid JSON: " + e.getMessage());
             return;

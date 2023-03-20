@@ -65,71 +65,94 @@ public class WarningHandler implements HttpHandler {
         try {
             JSONObject json = new JSONObject(new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining()));
             if (json.has("query")) {
-                handleQuery(exchange, json);
-            } else { // Assume regular / update message
+                String queryType = json.getString("query");
+                if ("user".equals(queryType) && json.has("nickname")) {
+                    queryByNickname(exchange, json);
+                } else if ("time".equals(queryType) && json.has("timestart") && json.has("timeend")) {
+                    queryByTimePeriod(exchange, json);
+                } else if ("location".equals(queryType) && isLocationQuery(json)) {
+                    queryByLocation(exchange, json);
+                } else {
+                    sendBadRequest(exchange, "Invalid query type or missing parameters");
+                }
+            } else {
+                // Assume regular / update message
                 handleMessage(exchange, json);
             }
         } catch (Exception e) {
             sendBadRequest(exchange, "Invalid JSON");
         }
-
-    }
-
-    /**
-     * Handles a message query (GET) request.
-     */
-    private void handleQuery(HttpExchange exchange, JSONObject json) throws IOException {
-        String queryType = json.getString("query");
-        if ("user".equals(queryType) && json.has("nickname")) {
-            // Query by nickname
-            try {
-                String nickname = json.getString("nickname");
-                JSONArray array = database.getMessages(nickname);
-                if (array.isEmpty()) {
-                    sendNoContent(exchange);
-                    return;
-                }
-                sendJSONResponse(exchange, array.toString().getBytes());
-            } catch (SQLException e) {
-                sendResponse(exchange, 500, "Error while fetching messages: " + e.getMessage());
-            }
-        } else if ("time".equals(queryType) && json.has("timestart") && json.has("timeend")) {
-            // Query by time
-            try {
-                long timeStart = dateStringToEpochMilli(json.getString("timestart"));
-                long timeEnd = dateStringToEpochMilli(json.getString("timeend"));
-                JSONArray array = database.getMessages(timeStart, timeEnd);
-                if (array.isEmpty()) {
-                    sendNoContent(exchange);
-                }
-                sendJSONResponse(exchange, array.toString().getBytes());
-            } catch (DateTimeException e) {
-                sendBadRequest(exchange, "Invalid date format");
-            } catch (SQLException e) {
-                sendResponse(exchange, 500, "Error while fetching messages: " + e.getMessage());
-            }
-        } else if ("location".equals(queryType) && isLocationQuery(json)) {
-            // Query by location
-            try {
-                double upLongitude = json.getDouble("uplongitude");
-                double upLatitude = json.getDouble("uplatitude");
-                double downLongitude = json.getDouble("downlongitude");
-                double downLatitude = json.getDouble("downlatitude");
-                JSONArray array = database.getMessages(upLatitude, downLatitude, upLongitude, downLongitude);
-                if (array.isEmpty()) {
-                    sendNoContent(exchange);
-                }
-                sendJSONResponse(exchange, array.toString().getBytes());
-            } catch (SQLException e) {
-                sendResponse(exchange, 500, "Error while fetching messages: " + e.getMessage());
-            }
-        } else {
-            sendBadRequest(exchange, "Invalid query type or missing parameters");
-        }
     }
 
     private boolean isLocationQuery(JSONObject json) {
         return json.has("uplongitude") && json.has("uplatitude") && json.has("downlongitude") && json.has("downlatitude");
+    }
+
+    /**
+     * Handles a POST request to query messages by nickname.
+     *
+     * @param exchange The HttpExchange object
+     * @param json     The JSON request
+     * @throws IOException If an I/O error occurs
+     */
+    private void queryByNickname(HttpExchange exchange, JSONObject json) throws IOException {
+        try {
+            String nickname = json.getString("nickname");
+            JSONArray array = database.getMessages(nickname);
+            if (array.isEmpty()) {
+                sendNoContent(exchange);
+            } else {
+                sendJSONResponse(exchange, array.toString().getBytes());
+            }
+        } catch (SQLException e) {
+            sendResponse(exchange, 500, "Error while fetching messages: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handles a POST request to query messages by time period.
+     *
+     * @param exchange The HttpExchange object
+     * @param json     The JSON request
+     * @throws IOException If an I/O error occurs
+     */
+    private void queryByTimePeriod(HttpExchange exchange, JSONObject json) throws IOException {
+        try {
+            long timeStart = dateStringToEpochMilli(json.getString("timestart"));
+            long timeEnd = dateStringToEpochMilli(json.getString("timeend"));
+            JSONArray array = database.getMessages(timeStart, timeEnd);
+            if (array.isEmpty()) {
+                sendNoContent(exchange);
+            }
+            sendJSONResponse(exchange, array.toString().getBytes());
+        } catch (DateTimeException e) {
+            sendBadRequest(exchange, "Invalid date format");
+        } catch (SQLException e) {
+            sendResponse(exchange, 500, "Error while fetching messages: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handles a POST request to query messages by location.
+     *
+     * @param exchange The HttpExchange object
+     * @param json     The JSON request
+     * @throws IOException If an I/O error occurs
+     */
+    private void queryByLocation(HttpExchange exchange, JSONObject json) throws IOException {
+        try {
+            double upLongitude = json.getDouble("uplongitude");
+            double upLatitude = json.getDouble("uplatitude");
+            double downLongitude = json.getDouble("downlongitude");
+            double downLatitude = json.getDouble("downlatitude");
+            JSONArray array = database.getMessages(upLatitude, downLatitude, upLongitude, downLongitude);
+            if (array.isEmpty()) {
+                sendNoContent(exchange);
+            }
+            sendJSONResponse(exchange, array.toString().getBytes());
+        } catch (SQLException e) {
+            sendResponse(exchange, 500, "Error while fetching messages: " + e.getMessage());
+        }
     }
 
     /**
@@ -237,7 +260,7 @@ public class WarningHandler implements HttpHandler {
     }
 
     /**
-     * Sends a HTTP response to the client.
+     * Sends an HTTP response to the client.
      *
      * @param exchange The HttpExchange object
      * @param code     The HTTP response code
