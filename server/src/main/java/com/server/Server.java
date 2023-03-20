@@ -24,6 +24,7 @@ public class Server {
 
     public static void main(String[] args) {
         try {
+            System.out.println("Howdy! Starting server...");
             MessageDatabase database = new MessageDatabase();
             //create the http server to port 8001 with default logger
             HttpsServer server = HttpsServer.create(new InetSocketAddress(8001), 0);
