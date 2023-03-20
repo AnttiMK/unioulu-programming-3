@@ -11,6 +11,9 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
+import static com.server.util.ResponseUtil.sendBadRequest;
+import static com.server.util.ResponseUtil.sendResponse;
+
 public class RegistrationHandler implements HttpHandler {
 
     private final UserAuthenticator auth;
@@ -59,17 +62,6 @@ public class RegistrationHandler implements HttpHandler {
         } else {
             sendBadRequest(exchange, "User already exists");
         }
-    }
-
-    private void sendBadRequest(HttpExchange exchange, String response) throws IOException {
-        sendResponse(exchange, 400, response);
-    }
-
-    private void sendResponse(HttpExchange exchange, int code, String response) throws IOException {
-        byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
-        exchange.sendResponseHeaders(code, responseBytes.length);
-        exchange.getResponseBody().write(responseBytes);
-        exchange.getResponseBody().close();
     }
 
 }

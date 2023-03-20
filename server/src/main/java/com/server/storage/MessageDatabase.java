@@ -1,5 +1,6 @@
 package com.server.storage;
 
+import com.server.util.TimeUtil;
 import org.apache.commons.codec.digest.Crypt;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -7,9 +8,6 @@ import org.json.JSONObject;
 import java.io.File;
 import java.security.SecureRandom;
 import java.sql.*;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 
 public class MessageDatabase {
@@ -288,7 +286,7 @@ public class MessageDatabase {
         json.put("nickname", rs.getString("nickname"));
         json.put("latitude", rs.getDouble("latitude"));
         json.put("longitude", rs.getDouble("longitude"));
-        String sentDate = epochMilliToDateString(rs.getLong("sent"));
+        String sentDate = TimeUtil.epochMilliToDateString(rs.getLong("sent"));
         json.put("sent", sentDate);
         json.put("dangertype", rs.getString("dangertype"));
 
@@ -309,14 +307,10 @@ public class MessageDatabase {
 
         long modified = rs.getLong("modified");
         if (modified != 0) {
-            json.put("modified", epochMilliToDateString(modified));
+            json.put("modified", TimeUtil.epochMilliToDateString(modified));
         }
 
         array.put(json);
-    }
-
-    private String epochMilliToDateString(long epochMs) {
-        return Instant.ofEpochMilli(epochMs).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(DATE_PATTERN));
     }
 
     /**
