@@ -55,7 +55,7 @@ public class WarningHandler implements HttpHandler {
             JSONObject json = new JSONObject(new BufferedReader(new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining()));
             if (json.has("query")) {
                 handleQuery(exchange, json);
-            } else { // Assume regular message
+            } else { // Assume regular / update message
                 handleMessage(exchange, json);
             }
         } catch (Exception e) {
@@ -105,6 +105,7 @@ public class WarningHandler implements HttpHandler {
     }
 
     private void handleMessage(HttpExchange exchange, JSONObject json) throws IOException, SQLException {
+        boolean isUpdate = json.has("id");
         try {
             String nickname = json.getString("nickname");
             double latitude = json.getDouble("latitude");
@@ -125,7 +126,13 @@ public class WarningHandler implements HttpHandler {
                 phoneNumber = json.getString("phonenumber");
             }
 
-            database.handleMessage(nickname, latitude, longitude, sent, dangerType, areaCode, phoneNumber);
+            if (isUpdate) {
+                int id = json.getInt("id");
+                String
+                database.updateMessage(id, nickname, latitude, longitude, sent, dangerType, areaCode, phoneNumber);
+            } else {
+                database.handleMessage(nickname, latitude, longitude, sent, dangerType, areaCode, phoneNumber);
+            }
             exchange.sendResponseHeaders(200, -1);
             exchange.getResponseBody().close();
         } catch (DateTimeException e) {
