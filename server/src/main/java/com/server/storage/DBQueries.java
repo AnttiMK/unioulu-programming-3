@@ -17,6 +17,7 @@ public class DBQueries {
             + "dangertype TEXT NOT NULL,"
             + "areacode TEXT,"
             + "phonenumber TEXT,"
+            + "weather TEXT,"
             + "updatereason TEXT,"
             + "modified INTEGER,"
             + "sender TEXT NOT NULL,"
@@ -27,8 +28,8 @@ public class DBQueries {
     public static final String CHECK_CREDENTIALS = "SELECT * FROM users WHERE username = ?";
     public static final String INSERT_USER = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
     public static final String CHECK_USER_EXISTS = "SELECT * FROM users WHERE username = ?";
-    public static final String INSERT_MESSAGE = "INSERT INTO messages (nickname, latitude, longitude, sent, dangertype, areacode, phonenumber, sender) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    public static final String UPDATE_MESSAGE = "UPDATE messages SET nickname = ?, latitude = ?, longitude = ?, sent = ?, dangertype = ?, areacode = ?, phonenumber = ?, updatereason = ?, modified = ? WHERE id = ?";
+    public static final String INSERT_MESSAGE = "INSERT INTO messages (nickname, latitude, longitude, sent, dangertype, areacode, phonenumber, weather, sender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    public static final String UPDATE_MESSAGE = "UPDATE messages SET nickname = ?, latitude = ?, longitude = ?, sent = ?, dangertype = ?, areacode = ?, phonenumber = ?, weather = ?, updatereason = ?, modified = ? WHERE id = ?";
     public static final String GET_ALL_MESSAGES = "SELECT * FROM messages";
     public static final String GET_MESSAGES_BY_NICKNAME = "SELECT * FROM messages WHERE nickname = ?";
     public static final String GET_MESSAGES_BY_TIME = "SELECT * FROM messages WHERE sent >= ? AND sent <= ?";

@@ -119,6 +119,7 @@ public class MessageDatabase {
      * @param dangerType  the type of danger
      * @param areaCode    the area code of the user
      * @param phoneNumber the phone number of the user
+     * @param weather     the weather at the time of the warning
      * @param username    the username of the user
      * @throws SQLException if an error occurs while inserting the message
      */
@@ -129,6 +130,7 @@ public class MessageDatabase {
                               String dangerType,
                               String areaCode,
                               String phoneNumber,
+                              String weather,
                               String username) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.INSERT_MESSAGE)) {
             ps.setString(1, nickname);
@@ -138,7 +140,8 @@ public class MessageDatabase {
             ps.setString(5, dangerType);
             ps.setString(6, areaCode);
             ps.setString(7, phoneNumber);
-            ps.setString(8, username);
+            ps.setString(8, weather);
+            ps.setString(9, username);
             ps.executeUpdate();
         }
     }
@@ -154,6 +157,7 @@ public class MessageDatabase {
      * @param dangerType   the type of danger
      * @param areaCode     the area code of the user
      * @param phoneNumber  the phone number of the user
+     * @param weather      the weather at the time of the warning
      * @param updateReason the reason for the update
      * @param modified     the time the message was modified
      * @throws SQLException if an error occurs while updating the message
@@ -166,6 +170,7 @@ public class MessageDatabase {
                               String dangerType,
                               String areaCode,
                               String phoneNumber,
+                              String weather,
                               String updateReason,
                               long modified) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.UPDATE_MESSAGE)) {
@@ -176,15 +181,17 @@ public class MessageDatabase {
             ps.setString(5, dangerType);
             ps.setString(6, areaCode);
             ps.setString(7, phoneNumber);
-            ps.setString(8, updateReason);
-            ps.setLong(9, modified);
-            ps.setInt(10, id);
+            ps.setString(8, weather);
+            ps.setString(9, updateReason);
+            ps.setLong(10, modified);
+            ps.setInt(11, id);
             ps.executeUpdate();
         }
     }
 
     /**
      * {@return a JSONArray containing all of the messages in the database}
+     *
      * @throws SQLException if an error occurs while querying the database
      */
     public JSONArray getMessages() throws SQLException {
@@ -303,6 +310,11 @@ public class MessageDatabase {
         long modified = rs.getLong("modified");
         if (modified != 0) {
             json.put("modified", TimeUtil.epochMilliToDateString(modified));
+        }
+
+        String weather = rs.getString("weather");
+        if (weather != null) {
+            json.put("weather", weather);
         }
 
         array.put(json);

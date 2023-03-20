@@ -2,6 +2,7 @@ package com.server.realm;
 
 import com.server.storage.MessageDatabase;
 import com.server.util.TimeUtil;
+import com.server.util.WeatherService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.json.JSONArray;
@@ -193,11 +194,15 @@ public class WarningHandler implements HttpHandler {
 
             String areaCode = null;
             String phoneNumber = null;
+            String weather = null;
             if (json.has("areacode")) {
                 areaCode = json.getString("areacode");
             }
             if (json.has("phonenumber")) {
                 phoneNumber = json.getString("phonenumber");
+            }
+            if (json.has("weather")) {
+                weather = WeatherService.getWeatherInfo(latitude, longitude);
             }
 
             /*
@@ -211,9 +216,9 @@ public class WarningHandler implements HttpHandler {
                     return;
                 }
                 String updateReason = json.getString("updatereason");
-                database.updateMessage(id, nickname, latitude, longitude, sent, dangerType, areaCode, phoneNumber, updateReason, System.currentTimeMillis());
+                database.updateMessage(id, nickname, latitude, longitude, sent, dangerType, areaCode, phoneNumber, weather, updateReason, System.currentTimeMillis());
             } else {
-                database.submitMessage(nickname, latitude, longitude, sent, dangerType, areaCode, phoneNumber, username);
+                database.submitMessage(nickname, latitude, longitude, sent, dangerType, areaCode, phoneNumber, weather, username);
             }
             exchange.sendResponseHeaders(200, -1);
             exchange.getResponseBody().close();
@@ -221,6 +226,8 @@ public class WarningHandler implements HttpHandler {
             sendBadRequest(exchange, "Invalid date format");
         } catch (SQLException e) {
             sendResponse(exchange, 500, "Database error: " + e.getMessage());
+        } catch (WeatherService.WeatherServiceException e) {
+            sendResponse(exchange, 500, "Error while fetching weather data: " + e.getMessage());
         } catch (Exception e) {
             sendBadRequest(exchange, "Invalid JSON");
         }
