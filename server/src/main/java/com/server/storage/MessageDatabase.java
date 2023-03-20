@@ -168,6 +168,7 @@ public class MessageDatabase {
      *
      * @param nickname the nickname to get the messages for
      * @return a JSONArray containing the messages
+     * @throws SQLException if an error occurs while querying the database
      */
     public JSONArray getMessages(String nickname) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.GET_MESSAGES_BY_NICKNAME)) {
@@ -187,11 +188,41 @@ public class MessageDatabase {
      * @param timeStart the start of the time period
      * @param timeEnd   the end of the time period
      * @return a JSONArray containing the messages
+     * @throws SQLException if an error occurs while querying the database
      */
     public JSONArray getMessages(long timeStart, long timeEnd) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.GET_MESSAGES_BY_TIME)) {
             ps.setLong(1, timeStart);
             ps.setLong(2, timeEnd);
+            ResultSet rs = ps.executeQuery();
+            JSONArray array = new JSONArray();
+            while (rs.next()) {
+                parseMsgToArray(rs, array);
+            }
+            return array;
+        }
+    }
+
+    /**
+     * Gets all warnings for a specific geographic area, using an artificial X/Y coordinate system.
+     * The area is defined by the upper and lower limits of latitude and longitude, where
+     * the latitude is the Y coordinate and the longitude is the X coordinate.
+     * The values for longitude are "reversed", meaning that the upLongitude is the
+     * smaller value on the X axis, and downLongitude is the larger value.
+     *
+     * @param upLatitude    the upper limit of the latitude
+     * @param downLatitude  the lower limit of the latitude
+     * @param upLongitude   the upper limit of the longitude
+     * @param downLongitude the lower limit of the longitude
+     * @return a JSONArray containing the messages
+     * @throws SQLException if an error occurs while querying the database
+     */
+    public JSONArray getMessages(double upLatitude, double downLatitude, double upLongitude, double downLongitude) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement(DBQueries.GET_MESSAGES_BY_AREA)) {
+            ps.setDouble(1, upLatitude);
+            ps.setDouble(2, downLatitude);
+            ps.setDouble(3, upLongitude);
+            ps.setDouble(4, downLongitude);
             ResultSet rs = ps.executeQuery();
             JSONArray array = new JSONArray();
             while (rs.next()) {
@@ -262,5 +293,4 @@ public class MessageDatabase {
             e.printStackTrace();
         }
     }
-
 }

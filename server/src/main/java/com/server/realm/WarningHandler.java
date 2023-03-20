@@ -108,9 +108,28 @@ public class WarningHandler implements HttpHandler {
             } catch (SQLException e) {
                 sendResponse(exchange, 500, "Error while fetching messages: " + e.getMessage());
             }
+        } else if ("location".equals(queryType) && isLocationQuery(json)) {
+            // Query by location
+            try {
+                double upLongitude = json.getDouble("uplongitude");
+                double upLatitude = json.getDouble("uplatitude");
+                double downLongitude = json.getDouble("downlongitude");
+                double downLatitude = json.getDouble("downlatitude");
+                JSONArray array = database.getMessages(upLatitude, downLatitude, upLongitude, downLongitude);
+                if (array.isEmpty()) {
+                    sendNoContent(exchange);
+                }
+                sendJSONResponse(exchange, array.toString().getBytes());
+            } catch (SQLException e) {
+                sendResponse(exchange, 500, "Error while fetching messages: " + e.getMessage());
+            }
         } else {
             sendBadRequest(exchange, "Invalid query type or missing parameters");
         }
+    }
+
+    private boolean isLocationQuery(JSONObject json) {
+        return json.has("uplongitude") && json.has("uplatitude") && json.has("downlongitude") && json.has("downlatitude");
     }
 
     /**
