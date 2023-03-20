@@ -175,7 +175,7 @@ public class WarningHandler implements HttpHandler {
     /**
      * Handles a POST request to submit or update a message.
      */
-    private void handleMessage(HttpExchange exchange, JSONObject json) throws IOException, SQLException {
+    private void handleMessage(HttpExchange exchange, JSONObject json) throws IOException {
         // Check if the request is a submission or an update
         boolean isUpdate = json.has("id");
         try {

@@ -12,17 +12,12 @@ import java.util.Base64;
 
 public class MessageDatabase {
 
-    private static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
     private static final String DB_PATH = "database.db";
     private final SecureRandom random = new SecureRandom();
     private Connection connection;
 
     public MessageDatabase() {
         this.init();
-    }
-
-    public Connection getConnection() throws SQLException {
-        return connection;
     }
 
     private void init() {
