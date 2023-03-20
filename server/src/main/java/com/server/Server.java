@@ -61,6 +61,7 @@ public class Server {
             keyStoreFile = args[0];
             passphrase = args[1].toCharArray();
         } else {
+            // If both args were not provided, use default keystore credentials
             keyStoreFile = "keystore.jks";
             passphrase = "password".toCharArray();
         }
@@ -80,6 +81,10 @@ public class Server {
     }
 
     private static void addShutdownHook(HttpsServer server, MessageDatabase database) {
+        /*
+         * Adds a shutdown hook to the process so that
+         * the webserver and database can be shut down gracefully.
+         */
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Shutting down server...");
             server.stop(0);

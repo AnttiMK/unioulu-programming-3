@@ -46,7 +46,7 @@ public class MessageDatabase {
 
     }
 
-    public void runInitQuery(PreparedStatement ps) {
+    private void runInitQuery(PreparedStatement ps) {
         try (ps) {
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -55,6 +55,13 @@ public class MessageDatabase {
         }
     }
 
+    /**
+     * Checks if the given credentials exist in the database and are valid
+     *
+     * @param username the username to check
+     * @param password the password to check
+     * @return true if the credentials are valid, false otherwise
+     */
     public boolean checkCredentials(String username, String password) {
         try (PreparedStatement ps = connection.prepareStatement(DBQueries.CHECK_CREDENTIALS)) {
             ps.setString(1, username);
@@ -71,6 +78,14 @@ public class MessageDatabase {
         }
     }
 
+    /**
+     * Registers a new user in the database
+     *
+     * @param username the username
+     * @param password the password
+     * @param email    the email
+     * @return true if the user was successfully registered, false if the username already exists
+     */
     public boolean register(String username, String password, String email) {
         try {
             try (PreparedStatement ps = connection.prepareStatement(DBQueries.CHECK_USER_EXISTS)) {
@@ -101,6 +116,19 @@ public class MessageDatabase {
         }
     }
 
+    /**
+     * Inserts a new warning message into the database
+     *
+     * @param nickname    the nickname of the user
+     * @param latitude    the latitude of the position of the warning
+     * @param longitude   the longitude of the position of the warning
+     * @param sent        the time the warning was sent
+     * @param dangerType  the type of danger
+     * @param areaCode    the area code of the user
+     * @param phoneNumber the phone number of the user
+     * @param username    the username of the user
+     * @throws SQLException if an error occurs while inserting the message
+     */
     public void submitMessage(String nickname,
                               double latitude,
                               double longitude,
@@ -122,6 +150,21 @@ public class MessageDatabase {
         }
     }
 
+    /**
+     * Updates an existing warning message in the database
+     *
+     * @param id           the id of the message to update
+     * @param nickname     the nickname of the user
+     * @param latitude     the latitude of the position of the warning
+     * @param longitude    the longitude of the position of the warning
+     * @param sent         the time the warning was sent
+     * @param dangerType   the type of danger
+     * @param areaCode     the area code of the user
+     * @param phoneNumber  the phone number of the user
+     * @param updateReason the reason for the update
+     * @param modified     the time the message was modified
+     * @throws SQLException if an error occurs while updating the message
+     */
     public void updateMessage(int id,
                               String nickname,
                               double latitude,
@@ -149,7 +192,6 @@ public class MessageDatabase {
 
     /**
      * {@return a JSONArray containing all of the messages in the database}
-     *
      * @throws SQLException if an error occurs while querying the database
      */
     public JSONArray getMessages() throws SQLException {
@@ -232,6 +274,14 @@ public class MessageDatabase {
         }
     }
 
+    /**
+     * Parses a message from a ResultSet and adds it to a JSONArray.
+     * The ResultSet must not be empty (i.e. {@link ResultSet#next()} must have been called and returned true).
+     *
+     * @param rs    the ResultSet to parse the message from
+     * @param array the JSONArray to add the message to
+     * @throws SQLException if an error occurs while querying the database
+     */
     private void parseMsgToArray(ResultSet rs, JSONArray array) throws SQLException {
         JSONObject json = new JSONObject();
         json.put("id", rs.getInt("id"));
